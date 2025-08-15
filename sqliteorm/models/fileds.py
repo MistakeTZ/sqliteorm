@@ -32,3 +32,7 @@ class BooleanColumn(BaseColumn):
 class TextColumn(BaseColumn):
     def __init__(self, name: str, default_value = None, is_null = False):
         super().__init__(name, default_value, is_null, 'TEXT')
+
+class DateTimeColumn(BaseColumn):
+    def __init__(self, name: str, default_value = None, is_null = False):
+        super().__init__(name, default_value, is_null, 'DATETIME')

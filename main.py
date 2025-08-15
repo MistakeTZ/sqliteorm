@@ -17,5 +17,6 @@ users = Users(db, 'users')
 db.add_table(users)
 db.migrate()
 
-users.insert(name='John', age=20)
+# users.insert(name='John', age=20)
 print(users.values())
+print(users.value())

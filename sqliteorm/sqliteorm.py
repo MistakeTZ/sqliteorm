@@ -35,8 +35,8 @@ class SQLiteORM():
         for table in self.tables:
             columns = {
                 name: column 
-                for name, column in vars(type(table)).items()  # Получаем атрибуты класса (не экземпляра)
-                if isinstance(column, BaseColumn)  # Проверяем, что это экземпляр BaseColumn
+                for name, column in vars(type(table)).items()
+                if isinstance(column, BaseColumn)
             }
             for column in columns:
                 exec("table." + column + ".create_column(table)")
