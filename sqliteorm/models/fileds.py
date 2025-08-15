@@ -1,7 +1,7 @@
 from .table import Table
 
 class BaseColumn():
-    def __init__(self, name: str, default_value = None, is_null = False, type = 'TEXT'):
+    def __init__(self, name: str, default_value = None, is_null = False, type = 'UNKNOWN'):
         self.name = name
         self.default_value = default_value
         self.is_null = is_null
@@ -25,7 +25,10 @@ class IntegerColumn(BaseColumn):
     def __init__(self, name: str, default_value = None, is_null = False):
         super().__init__(name, default_value, is_null, 'INTEGER')
 
+class BooleanColumn(BaseColumn):
+    def __init__(self, name: str, default_value = None, is_null = False):
+        super().__init__(name, default_value, is_null, 'BOOLEAN')
 
-class IntegerField(BaseColumn):
-    def __init__(self, table: Table, name: str, value: int):
-        super().__init__(table, name, value)
+class TextColumn(BaseColumn):
+    def __init__(self, name: str, default_value = None, is_null = False):
+        super().__init__(name, default_value, is_null, 'TEXT')

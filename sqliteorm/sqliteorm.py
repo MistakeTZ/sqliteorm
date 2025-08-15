@@ -1,6 +1,7 @@
 from os import path
 from sqlite3 import Connection
 from .models.fileds import BaseColumn
+import logging
 
 
 class SQLiteORM():
@@ -9,6 +10,7 @@ class SQLiteORM():
     def __init__(self, db_name):
         self.db_name = db_name
         if not path.exists(db_name):
+            logging.info("Creating database")
             self.execute('SELECT 1')
 
     def check_table(self, table_name):
@@ -18,11 +20,13 @@ class SQLiteORM():
         self.execute(f'CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY AUTOINCREMENT)')
 
     def check_column(self, table_name, column_name):
-        return column_name in self.execute(f'PRAGMA table_info({table_name})').fetchall()
+        return column_name in [
+            column[1] for column in self.execute(f'PRAGMA table_info({table_name})').fetchall()]
 
-    def execute(self, query):
+    def execute(self, query, values=()):
+        logging.debug(query)
         with Connection(self.db_name) as connection:
-            return connection.cursor().execute(query)
+            return connection.cursor().execute(query, values)
 
     def add_table(self, table):
         self.tables.append(table)
