@@ -50,7 +50,7 @@ class DateTimeColumn(BaseColumn):
 
 
 class ForeignColumn(BaseColumn):
-    def __init__(self, name: str, ref_table: str, ref_column: str = "id", is_null: bool = False):
+    def __init__(self, name: str, ref_table: str, ref_column: str = "id", on_delete: str = "CASCADE", is_null: bool = False):
         super().__init__(name, None, is_null, 'INTEGER')
         self.ref_table = ref_table
         self.ref_column = ref_column
@@ -58,6 +58,7 @@ class ForeignColumn(BaseColumn):
     def params(self, attribute_list=[]):
         if not self.is_null:
             attribute_list.append('NOT NULL')
+        attribute_list.append('ON DELETE ' + self.on_delete)
         return ' '.join(attribute_list)
 
     def constraint(self):

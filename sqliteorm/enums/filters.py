@@ -1,5 +1,8 @@
 LOOKUPS = {
     "exact": "=",
+    "not": "!=",
+    "null": "IS NULL",
+    "notnull": "IS NOT NULL",
     "gt": ">",
     "lt": "<",
     "gte": ">=",

@@ -70,7 +70,14 @@ class Table():
             if not op:
                 raise ValueError(f"Unknown lookup: {lookup}")
 
-            if lookup == "contains":
+            if lookup == "exact":
+                if isinstance(value, dict):
+                    value = value.get('id', value)
+                elif value is None:
+                    expr_sql = f"{field} IS NULL"
+                    new_table.filters.append((expr_sql,))
+                    continue
+            elif lookup == "contains":
                 value = f"%{value}%"
             elif lookup == "startswith":
                 value = f"{value}%"
@@ -80,6 +87,14 @@ class Table():
                 value = f"%{value.lower()}%"
                 expr_sql = f"LOWER({field}) {op} ?"
                 new_table.filters.append((expr_sql, value))
+                continue
+            elif lookup == "null":
+                expr_sql = f"{field} IS NULL"
+                new_table.filters.append((expr_sql,))
+                continue
+            elif lookup == "notnull":
+                expr_sql = f"{field} IS NOT NULL"
+                new_table.filters.append((expr_sql,))
                 continue
 
             expr_sql = f"{field} {op} ?"
