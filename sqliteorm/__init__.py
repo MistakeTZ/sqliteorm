@@ -14,7 +14,9 @@ class SQLiteORM():
             self.execute('SELECT 1')
 
     def check_table(self, table_name):
-        return table_name in self.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()
+        return table_name in [
+            table[0] for table in self.execute(
+                'SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
 
     def create_table(self, table_name, fields=['id INTEGER PRIMARY KEY AUTOINCREMENT']):
         self.execute(f'CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(fields)})')
