@@ -3,3 +3,4 @@ __pycache__/
 main.py
 dist/
 sqlitesimpleorm.egg-info/
+test.py

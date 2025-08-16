@@ -16,8 +16,8 @@ class SQLiteORM():
     def check_table(self, table_name):
         return table_name in self.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()
 
-    def create_table(self, table_name):
-        self.execute(f'CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY AUTOINCREMENT)')
+    def create_table(self, table_name, fields=['id INTEGER PRIMARY KEY AUTOINCREMENT']):
+        self.execute(f'CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(fields)})')
 
     def check_column(self, table_name, column_name):
         return column_name in [
@@ -30,7 +30,24 @@ class SQLiteORM():
 
     def add_table(self, table):
         self.tables.append(table)
-        self.migrate()
+        if not self.check_table(table.table_name):
+            columns = {
+                name: column 
+                for name, column in vars(type(table)).items()
+                if isinstance(column, BaseColumn)
+            }
+
+            fields = ['id INTEGER PRIMARY KEY AUTOINCREMENT']
+            for column in columns:
+                ldict = {}
+                exec(f"params = " + "table." + column + ".params()", locals(), ldict)
+                
+                fields.append(f'{column} {columns[column].type} {ldict.get('params', '')}')
+
+            self.create_table(table.table_name, fields)
+
+        else:
+            self.migrate()
 
     def migrate(self):
         for table in self.tables:

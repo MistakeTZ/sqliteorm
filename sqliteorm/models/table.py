@@ -1,10 +1,12 @@
+from ..enums.filters import *
+
+
 class Table():
     def __init__(self, db, name: str):
         self.db = db
         self.table_name = name
-
-        if not db.check_table(name):
-            db.create_table(name)
+        self.filters = []
+        self.params = []
 
     def check_column(self, column_name):
         return self.db.check_column(self.table_name, column_name)
@@ -22,34 +24,24 @@ class Table():
             data.append(dict(zip(keys, values.pop())))
         return data
 
-    def values(self):
-        cursor = self.db.execute(f'SELECT * FROM {self.table_name}')
-        return self.get_dict_list(cursor)
-
     def get_dict(self, cursor):
         keys = cursor.description
         value = cursor.fetchone()
+        if not value:
+            return {}
 
         return dict(zip([k[0] for k in keys], value))
 
-    def value(self):
-        cursor = self.db.execute(f'SELECT * FROM {self.table_name}')
-        return self.get_dict(cursor)
+    def all(self, **kwargs):
+        conditions = self.get_conditions()
 
-    def filter(self, **kwargs):
-        conditions, condition_formats = Table.get_conditions(list(kwargs.keys()))
-        values = [condition_formats[i].format(v) for i, v in enumerate(kwargs.values())]
-
-        cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' +
-            f'WHERE {" AND ".join(conditions)}', values)
+        cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' + conditions, self.params)
         return self.get_dict_list(cursor)
 
-    def filter_one(self, **kwargs):
-        conditions, condition_formats = Table.get_conditions(list(kwargs.keys()))
-        values = [condition_formats[i].format(v) for i, v in enumerate(kwargs.values())]
+    def one(self, **kwargs):
+        conditions = self.get_conditions()
 
-        cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' +
-            f'WHERE {" AND ".join(conditions)}', values)
+        cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' + conditions, self.params)
         return self.get_dict(cursor)
 
     def insert(self, **kwargs):
@@ -59,45 +51,43 @@ class Table():
                 tuple(kwargs.values()))
 
     def delete(self, **kwargs):
-        conditions, condition_formats = Table.get_conditions(list(kwargs.keys()))
-        values = [condition_formats[i].format(v) for i, v in enumerate(kwargs.values())]
+        conditions = self.get_conditions()
 
-        self.db.execute(f'DELETE FROM {self.table_name} ' +
-            f'WHERE {" AND ".join(conditions)}', values)
+        self.db.execute(f'DELETE FROM {self.table_name} ' + conditions, self.params)
 
-    staticmethod
-    def get_conditions(data):
-        conditions = []
-        condition_formats = []
-        for key in data:
-            if not '__' in key:
-                conditions.append(f'{key} = ?')
-                condition_formats.append('{}')
+    def filter(self, **kwargs):
+        new_table = Table(self.db, self.table_name)
+        new_table.filters = self.filters[:]
+
+        for expr, value in kwargs.items():
+            if "__" in expr:
+                field, lookup = expr.split("__", 1)
             else:
-                key, condition = key.split('__')
-                match (condition):
-                    case 'gt':
-                        conditions.append(f'{key} > ?')
-                        condition_formats.append('{}')
-                    case 'lt':
-                        conditions.append(f'{key} < ?')
-                        condition_formats.append('{}')
-                    case 'gte':
-                        conditions.append(f'{key} >= ?')
-                        condition_formats.append('{}')
-                    case 'lte':
-                        conditions.append(f'{key} <= ?')
-                        condition_formats.append('{}')
-                    case 'startswith':
-                        conditions.append(f'{key} LIKE ?')
-                        condition_formats.append('{}%')
-                    case 'endswith':
-                        conditions.append(f'{key} LIKE ?')
-                        condition_formats.append('%{}')
-                    case 'contains':
-                        conditions.append(f'{key} LIKE ?')
-                        condition_formats.append('%{}%')
-                    case _:
-                        raise Exception(f'Unknown condition: {condition}')
-                        
-        return conditions, condition_formats
+                field, lookup = expr, "exact"
+
+            op = LOOKUPS.get(lookup)
+            if not op:
+                raise ValueError(f"Unknown lookup: {lookup}")
+
+            if lookup == "contains":
+                value = f"%{value}%"
+            elif lookup == "startswith":
+                value = f"{value}%"
+            elif lookup == "endswith":
+                value = f"%{value}"
+            elif lookup == "icontains":
+                value = f"%{value.lower()}%"
+                expr_sql = f"LOWER({field}) {op} ?"
+                new_table.filters.append((expr_sql, value))
+                continue
+
+            expr_sql = f"{field} {op} ?"
+            new_table.filters.append((expr_sql, value))
+        return new_table
+
+    def get_conditions(self):
+        if self.filters:
+            where_clauses = [f[0] for f in self.filters]
+            self.params = [f[1] for f in self.filters]
+            return " WHERE " + " AND ".join(where_clauses)
+        return ""

@@ -7,6 +7,16 @@ class BaseColumn():
         self.is_null = is_null
         self.type = type
 
+    def params(self):
+        attribute_list = []
+        if self.default_value is not None:
+            attribute_list.append(f'DEFAULT {self.default_value}')
+
+        if not self.is_null:
+            attribute_list.append('NOT NULL')
+
+        return ' '.join(attribute_list)
+
     def create_column(self, table):
         if not table.check_column(self.name):
             if self.default_value is not None:
