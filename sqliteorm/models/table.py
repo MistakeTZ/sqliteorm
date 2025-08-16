@@ -35,7 +35,6 @@ class Table():
 
     def all(self, **kwargs):
         conditions = self.get_conditions()
-        print(conditions, self.params)
 
         cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' + conditions, self.params)
         return self.get_dict_list(cursor)
