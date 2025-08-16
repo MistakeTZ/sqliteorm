@@ -30,6 +30,7 @@ class SQLiteORM():
 
     def add_table(self, table):
         self.tables.append(table)
+        self.migrate()
 
     def migrate(self):
         for table in self.tables:
