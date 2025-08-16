@@ -37,15 +37,19 @@ class Table():
         return self.get_dict(cursor)
 
     def filter(self, **kwargs):
-        conditions = Table.get_conditions(list(kwargs.keys()))
+        conditions, condition_formats = Table.get_conditions(list(kwargs.keys()))
+        values = [condition_formats[i].format(v) for i, v in enumerate(kwargs.values())]
+
         cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' +
-            f'WHERE {" AND ".join(conditions)}', tuple(kwargs.values()))
+            f'WHERE {" AND ".join(conditions)}', values)
         return self.get_dict_list(cursor)
 
     def filter_one(self, **kwargs):
-        conditions = Table.get_conditions(list(kwargs.keys()))
+        conditions, condition_formats = Table.get_conditions(list(kwargs.keys()))
+        values = [condition_formats[i].format(v) for i, v in enumerate(kwargs.values())]
+
         cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' +
-            f'WHERE {" AND ".join(conditions)}', tuple(kwargs.values()))
+            f'WHERE {" AND ".join(conditions)}', values)
         return self.get_dict(cursor)
 
     def insert(self, **kwargs):
@@ -54,30 +58,46 @@ class Table():
             f'VALUES ({('?, ' * len(kwargs))[:-2]})',
                 tuple(kwargs.values()))
 
+    def delete(self, **kwargs):
+        conditions, condition_formats = Table.get_conditions(list(kwargs.keys()))
+        values = [condition_formats[i].format(v) for i, v in enumerate(kwargs.values())]
+
+        self.db.execute(f'DELETE FROM {self.table_name} ' +
+            f'WHERE {" AND ".join(conditions)}', values)
+
     staticmethod
     def get_conditions(data):
         conditions = []
+        condition_formats = []
         for key in data:
             if not '__' in key:
                 conditions.append(f'{key} = ?')
+                condition_formats.append('{}')
             else:
                 key, condition = key.split('__')
                 match (condition):
                     case 'gt':
                         conditions.append(f'{key} > ?')
+                        condition_formats.append('{}')
                     case 'lt':
                         conditions.append(f'{key} < ?')
+                        condition_formats.append('{}')
                     case 'gte':
                         conditions.append(f'{key} >= ?')
+                        condition_formats.append('{}')
                     case 'lte':
                         conditions.append(f'{key} <= ?')
+                        condition_formats.append('{}')
                     case 'startswith':
                         conditions.append(f'{key} LIKE ?')
+                        condition_formats.append('{}%')
                     case 'endswith':
                         conditions.append(f'{key} LIKE ?')
+                        condition_formats.append('%{}')
                     case 'contains':
                         conditions.append(f'{key} LIKE ?')
+                        condition_formats.append('%{}%')
                     case _:
                         raise Exception(f'Unknown condition: {condition}')
                         
-        return conditions
+        return conditions, condition_formats
