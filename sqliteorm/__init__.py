@@ -1,6 +1,6 @@
 from os import path
 from sqlite3 import Connection
-from .models.fileds import BaseColumn
+from .models.fileds import BaseColumn, ForeignColumn
 import logging
 
 
@@ -40,11 +40,19 @@ class SQLiteORM():
             }
 
             fields = ['id INTEGER PRIMARY KEY AUTOINCREMENT']
+            references = []
+            
             for column in columns:
                 ldict = {}
                 exec(f"params = " + "table." + column + ".params()", locals(), ldict)
                 
                 fields.append(f'{column} {columns[column].type} {ldict.get('params', '')}')
+
+                if isinstance(columns[column], ForeignColumn):
+                    exec(f"reference = " + "table." + column + ".constraint()", locals(), ldict)
+                    references.append(ldict.get('reference', ''))
+
+            fields.extend(references)
 
             self.create_table(table.table_name, fields)
 
