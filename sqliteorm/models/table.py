@@ -1,4 +1,5 @@
 from ..enums.filters import *
+from ..filters import Q
 
 
 class Table():
@@ -34,6 +35,7 @@ class Table():
 
     def all(self, **kwargs):
         conditions = self.get_conditions()
+        print(conditions, self.params)
 
         cursor = self.db.execute(f'SELECT * FROM {self.table_name} ' + conditions, self.params)
         return self.get_dict_list(cursor)
@@ -55,7 +57,7 @@ class Table():
 
         self.db.execute(f'DELETE FROM {self.table_name} ' + conditions, self.params)
 
-    def filter(self, **kwargs):
+    def filter(self, *args, **kwargs):
         new_table = Table(self.db, self.table_name)
         new_table.filters = self.filters[:]
 
@@ -83,11 +85,22 @@ class Table():
 
             expr_sql = f"{field} {op} ?"
             new_table.filters.append((expr_sql, value))
+
+        for q in args:
+            if not isinstance(q, Q):
+                raise ValueError("filter() args must be Q objects")
+            for sql, params in q.children:
+                new_table.filters.append((sql, *params))
+
         return new_table
 
     def get_conditions(self):
         if self.filters:
             where_clauses = [f[0] for f in self.filters]
-            self.params = [f[1] for f in self.filters]
+            
+            self.params = []
+            for filter in self.filters:
+                self.params.extend(filter[1:])
+            
             return " WHERE " + " AND ".join(where_clauses)
         return ""
