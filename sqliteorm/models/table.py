@@ -68,6 +68,15 @@ class Table():
             f'VALUES ({('?, ' * len(kwargs))[:-2]})',
                 tuple(kwargs.values()))
 
+    def update(self, **kwargs):
+        conditions = self.get_conditions()
+        from_clause = self.get_from_clause()
+
+        updated_values = ", ".join([f"{key} = ?" for key in kwargs.keys()])
+        self.db.execute(f'UPDATE {from_clause} SET {updated_values}'
+                        + conditions, list(kwargs.values()) + self.params)
+        return True
+
     def delete(self, **kwargs):
         conditions = self.get_conditions()
 

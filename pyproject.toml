@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sqlitesimpleorm"
-version = "0.2.3"
+version = "0.2.4"
 description = "SQLite3 simple ORM"
 authors = [{ name="MistakeTZ", email="mistaketz@gmail.com" }]
 readme = "README.md"
