@@ -44,14 +44,22 @@ class Table():
         conditions = self.get_conditions()
         from_clause = self.get_from_clause()
 
-        cursor = self.db.execute(f'SELECT * FROM {from_clause} ' + conditions, self.params)
+        cursor = self.db.execute(f'SELECT * FROM {from_clause}' + conditions, self.params)
         return self.get_dict_list(cursor)
 
     def one(self, **kwargs):
         conditions = self.get_conditions()
         from_clause = self.get_from_clause()
 
-        cursor = self.db.execute(f'SELECT * FROM {from_clause} ' + conditions, self.params)
+        cursor = self.db.execute(f'SELECT * FROM {from_clause}' + conditions, self.params)
+        return self.get_dict(cursor)
+
+    def get(self, id):
+        self.filters.append(("id = ?", id))
+        conditions = self.get_conditions()
+        self.filters.pop()
+
+        cursor = self.db.execute(f'SELECT * FROM {self.table_name}' + conditions, self.params)
         return self.get_dict(cursor)
 
     def insert(self, **kwargs):
