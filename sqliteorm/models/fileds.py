@@ -54,13 +54,13 @@ class ForeignColumn(BaseColumn):
         super().__init__(name, None, is_null, 'INTEGER')
         self.ref_table = ref_table
         self.ref_column = ref_column
+        self.on_delete = on_delete
 
     def params(self, attribute_list=[]):
         if not self.is_null:
             attribute_list.append('NOT NULL')
-        attribute_list.append('ON DELETE ' + self.on_delete)
         return ' '.join(attribute_list)
 
     def constraint(self):
         # generates foreign key constraint (usable only when creating table)
-        return f"FOREIGN KEY({self.name}) REFERENCES {self.ref_table}({self.ref_column})"
+        return f"FOREIGN KEY({self.name}) REFERENCES {self.ref_table}({self.ref_column}) ON DELETE {self.on_delete}"
